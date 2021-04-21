@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>localhost</title>
+</head>
+
+<style>
+    #player {
+        position: absolute;
+        min-width: 300px;
+        min-height: 75px;
+        z-index: 9;
+        background-color: #f1f1f1;
+        text-align: center;
+        border: 1px solid #d3d3d3;
+    }
+
+    #name {
+        position: absolute;
+        top: 0;
+    }
+
+    #artist {
+        position: absolute;
+        top: 20;
+    }
+
+    #preview {
+        position: absolute;
+        left: 0;
+        padding: 5px;
+        padding-bottom: 5px;
+    }
+</style>
+
+<body>
+    <div id="player">
+        <a id="link" href=""><img id="preview"></a>
+        <span id="name"></span><br>
+        <span id="artist"></span><br>
+        <span id="progressbar"><span id="current"></span><progress id="progress" max='100'></progress><span
+                id="length"></span></span>
+    </div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    function fancyTimeFormat(duration) {
+        // Hours, minutes and seconds
+        var hrs = ~~(duration / 3600);
+        var mins = ~~((duration % 3600) / 60);
+        var secs = ~~duration % 60;
+
+        // Output like "1:01" or "4:03:59" or "123:03:59"
+        var ret = "";
+
+        if (hrs > 0) {
+            ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+        }
+
+        ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+        ret += "" + secs;
+        return ret;
+    }
+
+    var socket = io();
+    socket.on('upd', (data) => {
+        let item = data.body.item
+        if(data.body != ''){
+            return false
+        }else{
+        let preview = item.album.images[2].url;
+        let link = item.external_urls.spotify;
+        let songname = item.name;
+        let artist = item.artists;
+        let ar = [];
+        artist.forEach((el, index) => {
+            ar.push(el.name)
+        });
+        artist = ar.join(', ')
+        let pr = data.body.progress_ms / 1000;
+        let dur = item.duration_ms / 1000;
+        let progress = 100 * (pr / dur);
+        document.getElementById('link').href = link;
+        document.getElementById('preview').src = preview;
+        document.getElementById('artist').innerHTML = ar;
+        document.getElementById('name').innerHTML = songname;
+        document.getElementById('progress').value = progress;
+        document.getElementById('current').innerHTML = fancyTimeFormat(pr)
+        document.getElementById('length').innerHTML = fancyTimeFormat(dur);
+        }
+    })
+</script>
+<script>
+    // Make the DIV element draggable:
+    dragElement(document.getElementById("player"));
+
+    function dragElement(elmnt) {
+        var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        if (document.getElementById(elmnt.id)) {
+            // if present, the header is where you move the DIV from:
+            document.getElementById(elmnt.id).onmousedown = dragMouseDown;
+        } else {
+            // otherwise, move the DIV from anywhere inside the DIV:
+            elmnt.onmousedown = dragMouseDown;
+        }
+
+        function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            // get the mouse cursor position at startup:
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            // call a function whenever the cursor moves:
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            // calculate the new cursor position:
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            // set the element's new position:
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            // stop moving when mouse button is released:
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
+    }
+</script>
+
+</html>
